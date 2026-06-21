@@ -1,24 +1,15 @@
-import torch
+import requests
+from model import MODEL_NAME
 
-def generate_response(model, tokenizer, user_input):
+def generate_response(user_input):
 
-    prompt = f"User: {user_input}\nBot:"
-
-    inputs = tokenizer(prompt, return_tensors="pt")
-
-    output = model.generate(
-        **inputs,
-        max_new_tokens=60,
-        do_sample=True,
-        temperature=0.4,   # 🔥 moins de créativité = moins de fautes
-        top_p=0.85,
-        repetition_penalty=1.5,
-        pad_token_id=tokenizer.eos_token_id
+    r = requests.post(
+        "http://localhost:11434/api/generate",
+        json={
+            "model": MODEL_NAME,
+            "prompt": user_input,
+            "stream": False
+        }
     )
 
-    text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-    if "Bot:" in text:
-        text = text.split("Bot:")[-1].strip()
-
-    return text
+    return r.json()["response"]
