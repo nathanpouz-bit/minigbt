@@ -1,25 +1,32 @@
 import streamlit as st
+from transformers import AutoTokenizer, AutoModelForCausalLM
+import torch
 
-from model import model, tokenizer
-from chat import generate_response
+st.title("DEBUG LLM")
 
-st.title("🧠 Mon Chatbot IA")
+MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+@st.cache_resource
+def load():
+    tokenizer = AutoTokenizer.from_pretrained(MODEL)
+    model = AutoModelForCausalLM.from_pretrained(MODEL)
+    return tokenizer, model
 
-# affichage historique
-for role, msg in st.session_state.messages:
-    st.write(("🧑 " if role == "user" else "🤖 ") + msg)
+tokenizer, model = load()
 
-# input utilisateur
-user_input = st.text_input("Écris ton message")
+msg = st.text_input("Message")
 
-if st.button("Envoyer") and user_input:
+if st.button("Send") and msg:
 
-    response = generate_response(model, tokenizer, user_input)
+    st.write("Model loaded OK")
 
-    st.session_state.messages.append(("user", user_input))
-    st.session_state.messages.append(("bot", response))
+    inputs = tokenizer(msg, return_tensors="pt")
 
-    st.rerun()
+    output = model.generate(
+        **inputs,
+        max_new_tokens=50
+    )
+
+    text = tokenizer.decode(output[0], skip_special_tokens=True)
+
+    st.write(text)
