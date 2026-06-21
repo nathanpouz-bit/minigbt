@@ -3,7 +3,7 @@ import torch
 
 def generate_response(model, tokenizer, user_input, memory_text=""):
 
-    prompt = memory_text + f"User: {user_input}\nBot:"
+    prompt = f"Human: {user_input}\nAssistant:"
 
     inputs = tokenizer.encode(prompt, return_tensors="pt")
 
@@ -13,11 +13,12 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
     with torch.no_grad():
         output = model.generate(
             inputs,
-            max_length=200,
+            max_length=150,
             do_sample=True,
-            top_p=0.95,
-            top_k=50,
-            temperature=0.7,
+            temperature=0.6,   # 🔥 plus stable
+            top_p=0.9,
+            top_k=40,
+            repetition_penalty=1.2,  # 🔥 IMPORTANT
             pad_token_id=tokenizer.eos_token_id
         )
 
@@ -26,4 +27,12 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
         skip_special_tokens=True
     )
 
-    return response if response.strip() else "Je ne suis pas sûr de comprendre."
+    # 🧹 nettoyage réponses cassées
+    response = response.strip()
+
+    # 🔥 filtre anti-bizarre
+    bad_outputs = ["you tried", "you tried.", "you tried to"]
+    if any(bad in response.lower() for bad in bad_outputs):
+        return "Bonjour 👋 ! Comment puis-je t'aider ?"
+
+    return response if response else "Je ne comprends pas."
