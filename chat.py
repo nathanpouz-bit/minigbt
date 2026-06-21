@@ -19,3 +19,4 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
         output[0][inputs.shape[-1]:],
         skip_special_tokens=True
     )
+inputs = inputs.to(model.device)
