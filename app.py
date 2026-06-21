@@ -1,53 +1,56 @@
-import json
-import os
+import streamlit as st
 
-LOG_FILE = "logs/conversations.json"
+# ⚠️ DOIT ÊTRE LA PREMIÈRE commande Streamlit
+st.set_page_config(
+    page_title="IA mémoire intelligente",
+    page_icon="🧠"
+)
 
-def save_log(user, bot):
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-
-    if not os.path.exists(LOG_FILE):
-        data = []
-    else:
-        with open(LOG_FILE, "r") as f:
-            data = json.load(f)
-
-    data.append({"user": user, "bot": bot})
-
-    with open(LOG_FILE, "w") as f:
-        json.dump(data, f)
-        
-    import streamlit as st
-
+# -------------------------
+# IMPORTS
+# -------------------------
 from model import model, tokenizer
 from chat import generate_response
 from vector_store import search, add_memory, rebuild_index
 
 
-st.set_page_config(page_title="IA mémoire intelligente", page_icon="🧠")
-st.title("🧠 Chatbot IA avec mémoire FAISS")
+# -------------------------
+# INIT
+# -------------------------
+st.title("🧠 Chatbot IA avec mémoire intelligente")
 
-
-# init index
 rebuild_index()
 
 
+# -------------------------
+# SESSION STATE
+# -------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 
-# afficher chat
+# -------------------------
+# DISPLAY CHAT
+# -------------------------
 for role, msg in st.session_state.messages:
-    st.write(("🧑 " if role == "user" else "🤖 ") + msg)
+    if role == "user":
+        st.write(f"🧑 {msg}")
+    else:
+        st.write(f"🤖 {msg}")
 
 
-user_input = st.text_input("Toi :", "")
+# -------------------------
+# INPUT USER
+# -------------------------
+user_input = st.text_input("Écris ton message :", "")
 
 
+# -------------------------
+# CHAT LOGIC
+# -------------------------
 if user_input:
 
-    # 🧠 1. mémoire sémantique (FAISS)
+    # 🧠 1. mémoire intelligente (vector search)
     memory = search(user_input)
 
     if memory:
@@ -56,11 +59,26 @@ if user_input:
         # 🤖 2. IA fallback
         response = generate_response(model, tokenizer, user_input)
 
-    # 💾 3. apprentissage automatique
+    # 💾 3. sauvegarde mémoire automatique
     add_memory(user_input, response)
 
-    # UI
+    # 🪟 4. update UI
     st.session_state.messages.append(("user", user_input))
     st.session_state.messages.append(("bot", response))
 
     st.rerun()
+
+
+# -------------------------
+# 🧠 APPRENTISSAGE MANUEL (OPTIONNEL)
+# -------------------------
+st.divider()
+st.subheader("🧠 Enseigner le bot")
+
+q = st.text_input("Question à apprendre")
+a = st.text_input("Bonne réponse")
+
+if st.button("Ajouter à la mémoire"):
+    if q and a:
+        add_memory(q, a)
+        st.success("Ajouté ✔️")
