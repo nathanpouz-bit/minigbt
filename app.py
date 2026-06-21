@@ -1,4 +1,24 @@
-import streamlit as st
+import json
+import os
+
+LOG_FILE = "logs/conversations.json"
+
+def save_log(user, bot):
+    if not os.path.exists("logs"):
+        os.makedirs("logs")
+
+    if not os.path.exists(LOG_FILE):
+        data = []
+    else:
+        with open(LOG_FILE, "r") as f:
+            data = json.load(f)
+
+    data.append({"user": user, "bot": bot})
+
+    with open(LOG_FILE, "w") as f:
+        json.dump(data, f)
+        
+    import streamlit as st
 
 from model import model, tokenizer
 from chat import generate_response
