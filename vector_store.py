@@ -1,15 +1,11 @@
-import faiss
-import numpy as np
-from sentence_transformers import SentenceTransformer
 import json
 import os
-
-EMBED_MODEL = SentenceTransformer("all-MiniLM-L6-v2")
-
-DIM = 384
-index = faiss.IndexFlatL2(DIM)
+import numpy as np
+from sentence_transformers import SentenceTransformer
 
 DATA_FILE = "data.json"
+
+model_embed = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def load_data():
@@ -25,46 +21,39 @@ def save_data(data):
 
 
 def embed(text):
-    return EMBED_MODEL.encode([text])[0]
-
-
-def rebuild_index():
-    global index
-    index = faiss.IndexFlatL2(DIM)
-
-    data = load_data()
-
-    if len(data) == 0:
-        return
-
-    vectors = []
-    for item in data:
-        vectors.append(embed(item["user"]))
-
-    vectors = np.array(vectors).astype("float32")
-    index.add(vectors)
-
-
-def search(query, k=1):
-    data = load_data()
-    if len(data) == 0:
-        return None
-
-    q_vec = np.array([embed(query)]).astype("float32")
-
-    D, I = index.search(q_vec, k)
-
-    if I[0][0] == -1:
-        return None
-
-    return data[I[0][0]]
+    return np.array(model_embed.encode(text))
 
 
 def add_memory(user, bot):
     data = load_data()
     data.append({"user": user, "bot": bot})
-
     save_data(data)
 
-    # update index
-    rebuild_index()
+
+def search(query):
+    data = load_data()
+    if len(data) == 0:
+        return None
+
+    q = embed(query)
+
+    best_score = -1
+    best_item = None
+
+    for item in data:
+        v = embed(item["user"])
+        score = np.dot(q, v) / (np.linalg.norm(q) * np.linalg.norm(v))
+
+        if score > best_score:
+            best_score = score
+            best_item = item
+
+    if best_score > 0.75:
+        return best_item
+
+    return None
+
+
+def rebuild_index():
+    # compatibilité (ne fait rien ici)
+    pass
