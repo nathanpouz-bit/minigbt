@@ -1,32 +1,25 @@
 import streamlit as st
-from transformers import AutoTokenizer, AutoModelForCausalLM
 
-st.title("Test modèle")
+from model import model, tokenizer
+from chat import generate_response
 
-MODEL_NAME = "distilgpt2"
+st.title("🧠 Mon Chatbot IA")
 
-@st.cache_resource
-def load_model():
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
-    return tokenizer, model
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-tokenizer, model = load_model()
+# affichage historique
+for role, msg in st.session_state.messages:
+    st.write(("🧑 " if role == "user" else "🤖 ") + msg)
 
-msg = st.text_input("Message")
+# input utilisateur
+user_input = st.text_input("Écris ton message")
 
-if st.button("Envoyer") and msg:
+if st.button("Envoyer") and user_input:
 
-    inputs = tokenizer(msg, return_tensors="pt")
+    response = generate_response(model, tokenizer, user_input)
 
-    output = model.generate(
-        **inputs,
-        max_new_tokens=30
-    )
+    st.session_state.messages.append(("user", user_input))
+    st.session_state.messages.append(("bot", response))
 
-    response = tokenizer.decode(
-        output[0],
-        skip_special_tokens=True
-    )
-
-    st.write(response)
+    st.rerun()
