@@ -1,11 +1,8 @@
 import json
 import os
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 DATA_FILE = "data.json"
-
-model_embed = SentenceTransformer("all-MiniLM-L6-v2")
 
 
 def load_data():
@@ -21,7 +18,12 @@ def save_data(data):
 
 
 def embed(text):
-    return np.array(model_embed.encode(text))
+    # 🔥 embedding ultra simple (fallback)
+    return np.array([hash(w) % 1000 for w in text.lower().split()])
+
+
+def similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b) + 1e-8)
 
 
 def add_memory(user, bot):
@@ -32,28 +34,27 @@ def add_memory(user, bot):
 
 def search(query):
     data = load_data()
-    if len(data) == 0:
+    if not data:
         return None
 
     q = embed(query)
 
+    best = None
     best_score = -1
-    best_item = None
 
     for item in data:
         v = embed(item["user"])
-        score = np.dot(q, v) / (np.linalg.norm(q) * np.linalg.norm(v))
+        score = similarity(q, v)
 
         if score > best_score:
             best_score = score
-            best_item = item
+            best = item
 
-    if best_score > 0.75:
-        return best_item
+    if best_score > 0.5:
+        return best
 
     return None
 
 
 def rebuild_index():
-    # compatibilité (ne fait rien ici)
     pass
