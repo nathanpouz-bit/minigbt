@@ -6,6 +6,9 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
 
     inputs = tokenizer.encode(prompt, return_tensors="pt")
 
+    # 🔥 IMPORTANT : déplacer AU BON MOMENT
+    inputs = inputs.to(model.device)
+
     output = model.generate(
         inputs,
         max_length=200,
@@ -15,8 +18,9 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
         pad_token_id=tokenizer.eos_token_id
     )
 
-    return tokenizer.decode(
+    response = tokenizer.decode(
         output[0][inputs.shape[-1]:],
         skip_special_tokens=True
     )
-inputs = inputs.to(model.device)
+
+    return response
