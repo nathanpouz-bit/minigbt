@@ -2,25 +2,14 @@ import torch
 
 def generate_response(model, tokenizer, user_input, memory_text=""):
 
-    messages = [
-        {
-            "role": "user",
-            "content": user_input
-        }
-    ]
-
-    prompt = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True
-    )
+    prompt = f"User: {user_input}\nAssistant:"
 
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
 
     with torch.no_grad():
         output = model.generate(
             **inputs,
-            max_new_tokens=150,
+            max_new_tokens=120,
             temperature=0.7,
             top_p=0.9,
             repetition_penalty=1.1
@@ -32,5 +21,3 @@ def generate_response(model, tokenizer, user_input, memory_text=""):
     )
 
     return response.strip()
-
-MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.2"
