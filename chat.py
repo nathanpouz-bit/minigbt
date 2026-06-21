@@ -3,7 +3,7 @@ from model import MODEL_NAME
 
 def generate_response(user_input):
 
-    r = requests.post(
+    response = requests.post(
         "http://localhost:11434/api/generate",
         json={
             "model": MODEL_NAME,
@@ -12,4 +12,4 @@ def generate_response(user_input):
         }
     )
 
-    return r.json()["response"]
+    return response.json()["response"]
