@@ -1,28 +1,23 @@
 import torch
 
-def generate_response(model, tokenizer, user_input, chat_history_ids=None):
-    new_input_ids = tokenizer.encode(
-        user_input + tokenizer.eos_token,
-        return_tensors="pt"
-    )
+def generate_response(model, tokenizer, user_input, memory_text=""):
 
-    if chat_history_ids is not None:
-        bot_input_ids = torch.cat([chat_history_ids, new_input_ids], dim=-1)
-    else:
-        bot_input_ids = new_input_ids
+    input_text = memory_text + f"User: {user_input}\nBot:"
 
-    chat_history_ids = model.generate(
-        bot_input_ids,
-        max_length=1000,
-        pad_token_id=tokenizer.eos_token_id,
+    inputs = tokenizer.encode(input_text, return_tensors="pt")
+
+    output = model.generate(
+        inputs,
+        max_length=200,
         do_sample=True,
         top_p=0.95,
-        top_k=50
+        top_k=50,
+        pad_token_id=tokenizer.eos_token_id
     )
 
     response = tokenizer.decode(
-        chat_history_ids[:, bot_input_ids.shape[-1]:][0],
+        output[0][inputs.shape[-1]:],
         skip_special_tokens=True
     )
 
-    return response, chat_history_ids
+    return response
