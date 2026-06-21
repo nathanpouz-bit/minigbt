@@ -1,84 +1,60 @@
 import streamlit as st
 
-# ⚠️ DOIT ÊTRE LA PREMIÈRE commande Streamlit
-st.set_page_config(
-    page_title="IA mémoire intelligente",
-    page_icon="🧠"
-)
-
-# -------------------------
-# IMPORTS
-# -------------------------
 from model import model, tokenizer
 from chat import generate_response
 from vector_store import search, add_memory, rebuild_index
 
 
-# -------------------------
-# INIT
-# -------------------------
-st.title("🧠 Chatbot IA avec mémoire intelligente")
+st.set_page_config(page_title="IA", page_icon="🧠")
+st.title("🧠 Chatbot stable")
 
 rebuild_index()
 
-
 # -------------------------
-# SESSION STATE
+# SESSION STATE SAFE
 # -------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+if "last_input" not in st.session_state:
+    st.session_state.last_input = None
+
 
 # -------------------------
-# DISPLAY CHAT
+# CHAT DISPLAY
 # -------------------------
 for role, msg in st.session_state.messages:
-    if role == "user":
-        st.write(f"🧑 {msg}")
-    else:
-        st.write(f"🤖 {msg}")
+    st.write(("🧑 " if role == "user" else "🤖 ") + msg)
 
 
 # -------------------------
-# INPUT USER
+# INPUT + BUTTON (IMPORTANT)
 # -------------------------
-user_input = st.text_input("Écris ton message :", "")
-
-
-# -------------------------
-# CHAT LOGIC
-# -------------------------
-if user_input:
-
-    # 🧠 1. mémoire intelligente (vector search)
-    memory = search(user_input)
-
-    if memory:
-        response = memory["bot"]
-    else:
-        # 🤖 2. IA fallback
-        response = generate_response(model, tokenizer, user_input)
-
-    # 💾 3. sauvegarde mémoire automatique
-    add_memory(user_input, response)
-
-    # 🪟 4. update UI
-    st.session_state.messages.append(("user", user_input))
-    st.session_state.messages.append(("bot", response))
-
-    st.rerun()
+user_input = st.text_input("Ton message :", "")
+send = st.button("Envoyer")
 
 
 # -------------------------
-# 🧠 APPRENTISSAGE MANUEL (OPTIONNEL)
+# LOGIQUE ANTI-BOUCLE
 # -------------------------
-st.divider()
-st.subheader("🧠 Enseigner le bot")
+if send and user_input:
 
-q = st.text_input("Question à apprendre")
-a = st.text_input("Bonne réponse")
+    # 🔒 bloque répétition exacte
+    if user_input != st.session_state.last_input:
 
-if st.button("Ajouter à la mémoire"):
-    if q and a:
-        add_memory(q, a)
-        st.success("Ajouté ✔️")
+        st.session_state.last_input = user_input
+
+        # 🧠 mémoire
+        memory = search(user_input)
+
+        if memory:
+            response = memory["bot"]
+        else:
+            response = generate_response(model, tokenizer, user_input)
+
+        # 💾 save
+        add_memory(user_input, response)
+
+        # 🪟 UI
+        st.session_state.messages.append(("user", user_input))
+        st.session_state.messages.append(("bot", response))
