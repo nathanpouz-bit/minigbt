@@ -1,32 +1,23 @@
 import streamlit as st
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 
-st.title("DEBUG LLM")
+from model import model, tokenizer
+from chat import generate_response
 
-MODEL = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+st.title("🧠 GPT-2 Chatbot")
 
-@st.cache_resource
-def load():
-    tokenizer = AutoTokenizer.from_pretrained(MODEL)
-    model = AutoModelForCausalLM.from_pretrained(MODEL)
-    return tokenizer, model
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-tokenizer, model = load()
+for r, m in st.session_state.messages:
+    st.write(("🧑 " if r == "user" else "🤖 ") + m)
 
-msg = st.text_input("Message")
+user_input = st.text_input("Message")
 
-if st.button("Send") and msg:
+if st.button("Envoyer") and user_input:
 
-    st.write("Model loaded OK")
+    response = generate_response(model, tokenizer, user_input)
 
-    inputs = tokenizer(msg, return_tensors="pt")
+    st.session_state.messages.append(("user", user_input))
+    st.session_state.messages.append(("bot", response))
 
-    output = model.generate(
-        **inputs,
-        max_new_tokens=50
-    )
-
-    text = tokenizer.decode(output[0], skip_special_tokens=True)
-
-    st.write(text)
+    st.rerun()
