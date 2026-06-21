@@ -10,7 +10,7 @@ def generate_response(model, tokenizer, user_input):
         **inputs,
         max_new_tokens=80,
         do_sample=True,
-        temperature=0.8,
+        temperature=0.7,
         top_p=0.9,
         repetition_penalty=1.2,
         pad_token_id=tokenizer.eos_token_id
