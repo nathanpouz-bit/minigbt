@@ -10,3 +10,5 @@ model = AutoModelForCausalLM.from_pretrained(MODEL_NAME)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
+
+model.config.pad_token_id = tokenizer.eos_token_id
